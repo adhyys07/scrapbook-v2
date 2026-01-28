@@ -1,0 +1,71 @@
+services:
+  deps:
+    image: oven/bun:1
+    working_dir: /app
+    command: ["sh", "-lc", "bun install --frozen-lockfile"]
+    volumes:
+      - .:/app
+      - scrapbook_node_modules:/app/node_modules
+      - scrapbook_bun_cache:/root/.bun
+
+  server:
+    image: oven/bun:1
+    working_dir: /app
+    command: ["bun", "run", "server/index.ts"]
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    environment:
+      # libsql local sqlite file URL
+      DB_FILE_NAME: "file:/data/scrapbook.db"
+      MAX_PLUGIN_LISTENER: "100"
+      # required by better-auth in practice; set in your .env for real deployments
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:-dev-secret-change-me}"
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    volumes:
+      - .:/app
+      - scrapbook_node_modules:/app/node_modules
+      - scrapbook_bun_cache:/root/.bun
+      - scrapbook_sqlite:/data
+
+  slack-bot:
+    image: oven/bun:1
+    working_dir: /app/slack-bot
+    command: ["bun", "run", "scrappy.ts"]
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+      server:
+        condition: service_started
+    environment:
+      SERVER_URL: "http://server:3000"
+      PORT: "3001"
+    volumes:
+      - .:/app
+      - scrapbook_node_modules:/app/node_modules
+      - scrapbook_bun_cache:/root/.bun
+
+  client:
+    image: oven/bun:1
+    working_dir: /app/client
+    command: ["bun", "run", "index.ts"]
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+      server:
+        condition: service_started
+    environment:
+      SERVER_URL: "http://server:3000"
+    volumes:
+      - .:/app
+      - scrapbook_node_modules:/app/node_modules
+      - scrapbook_bun_cache:/root/.bun
+    restart: "no"
+
+volumes:
+  scrapbook_node_modules:
+  scrapbook_bun_cache:
+  scrapbook_sqlite:

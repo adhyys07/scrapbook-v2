@@ -1,20 +1,8 @@
-import type { AppRouter } from "../server/index";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
-
-const client = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: "http://localhost:3000",
-      // async headers() {
-      //     return
-      // }
-    }),
-  ],
-});
+const serverUrl = process.env.SERVER_URL ?? "http://localhost:3000";
 
 async function main() {
-  const greeting = await client.greet.query();
-  console.log(greeting);
+  const res = await fetch(`${serverUrl}/`);
+  console.log(await res.json());
 }
 
 main();

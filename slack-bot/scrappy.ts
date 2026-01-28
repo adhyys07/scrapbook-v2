@@ -24,11 +24,13 @@ export const arrayBufferToString = z.codec(
 // load environment variables
 config();
 
+const serverUrl = process.env.SERVER_URL ?? "http://localhost:3000";
+
 const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
     // httpLink({
-      url: "http://localhost:3000/trpc",
+      url: `${serverUrl}/trpc`,
       async headers() {
         const headers = new Headers();
         headers.set("Authorization", "Bearer BjdAfmINXk0eamQhFQpP9wq4HaH2ZNNA"); // TODO: Replace token with variable - This is an app token
